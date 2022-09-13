@@ -29,6 +29,7 @@ pid_t shell_pgid;
 
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
+int cmd_id(struct tokens *tokens);
 
 /* Built-in command functions take token array and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
@@ -43,7 +44,26 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
+  {cmd_id, "id", "shows the user id, arguments \n\t -u \n\t\tprint only the effective user ID \n\t -g \n\t\tprint only the effective group ID  \n\t -G \n\t\tprint all group IDs"}
 };
+
+
+int cmd_id(unused struct tokens *tokens)
+{
+  int length=tokens_get_length(tokens);
+  
+  char command[4096]="";
+  //int size=0;
+  for(int i=0; i<length; i++)
+  {
+    char *flags=tokens_get_token(tokens,i);
+    strcat(command," ");
+    strcat(command,flags);
+  }
+  printf("%s\n",command);
+  system(command);
+  return 1;
+}
 
 /* Prints a helpful description for the given command */
 int cmd_help(unused struct tokens *tokens) {
