@@ -3,7 +3,7 @@
 // 2) Pushkar Patel-B20121
 // 3) Saksham Kumar-B20228
 #include <stdio.h>
-#include "process_backend.c"
+#include "process_backend.h"
 
 int main()
 {
@@ -20,7 +20,7 @@ int main()
         processes[i].completed=0;
         processes[i].last_time=processes[i].arrival_time;
     }
-    
+
     int choose;
     printf("Choose:\n1 for FCFS \n2 for Round Robin\n3 for SJF\n4 for SRTF... \n");
     scanf("%d", &choose);

@@ -1,13 +1,3 @@
-int numOfProcesses;
-struct Process
-{
-    int id;
-    int arrival_time;
-    int burst_time;
-    int completed;
-    int last_time;
-};
-
 int next(int curr_process, int choose, struct Process processes[], int currTime)
 {
     int new_process;
@@ -60,6 +50,7 @@ void run(struct Process processes[], int quanta, int numOfProcesses, int choose)
     }
     total_time /= numOfProcesses;
     wait_time /= numOfProcesses;
+
     printf("Average Completion Time: %f\n", total_time);
     printf("Average Wait Time: %f\n", wait_time);
 }
