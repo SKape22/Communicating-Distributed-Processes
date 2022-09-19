@@ -27,6 +27,9 @@ struct termios shell_tmodes;
 /* Process group id for the shell */
 pid_t shell_pgid;
 
+FILE *FDOUT=NULL;
+int STDOUT;
+
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_id(struct tokens *tokens);
@@ -41,27 +44,99 @@ typedef struct fun_desc {
   char *doc;
 } fun_desc_t;
 
+int isValidProcess(char *processpath)
+{
+  return access(processpath,F_OK);
+}
+
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_id, "id", "shows the user id, arguments \n\t -u \n\t\tprint only the effective user ID \n\t -g \n\t\tprint only the effective group ID  \n\t -G \n\t\tprint all group IDs"}
 };
 
+void clearFP(FILE *fp)
+{
+  fclose(fp);
+  free(fp);
+  fp=NULL;
+}
+
+FILE* set_stream(char *fname, int target)
+{
+    FILE *fp=fopen(fname,"w");
+    if(!fp) return NULL;
+    int fno=fileno(fp);
+    dup2(fno,target);
+    return fp;
+}
+
+void set_token_stream(unused struct tokens *tokens)
+{
+  int n=tokens_get_length(tokens);
+  for(int i=0; i<n; i++)
+  {
+    if(!strcmp(tokens_get_token(tokens,i),">"))
+    {
+      if(i+1>=n)
+      {
+        printf("No output file specified!\n");
+        return;
+      }
+      char *fname=tokens_get_token(tokens,i);
+      
+      FDOUT=set_stream(fname,STDOUT_FILENO);
+      if(FDOUT==NULL) printf("Cannot Open file");
+      else
+      {
+        token_destroyn(tokens,2); //destroy last two tokens 
+      }
+      return;
+    }
+  }
+}
 
 int cmd_id(unused struct tokens *tokens)
 {
-  int length=tokens_get_length(tokens);
-  
-  char command[4096]="";
-  //int size=0;
-  for(int i=0; i<length; i++)
-  {
-    char *flags=tokens_get_token(tokens,i);
-    strcat(command," ");
-    strcat(command,flags);
+  pid_t child_pid;
+
+  if ((child_pid = fork()) == 0) {
+
+    int argc = tokens_get_length(tokens);
+    char *argv[argc+1];
+    for (int i = 0; i < argc; i++) {
+      argv[i] = tokens_get_token(tokens, i);
+    }
+    argv[argc] = NULL;
+
+    execvp("/usr/bin/id", argv);
+
+    fprintf(stderr, "Error Ocuured While Executing Command\n");
+    exit(1);
   }
-  printf("%s\n",command);
-  system(command);
+  wait(NULL);
+  return 1;
+}
+
+int cmd_custom(unused struct tokens* tokens)
+{
+  pid_t child_pid;
+
+  if ((child_pid = fork()) == 0) {
+
+    int argc = tokens_get_length(tokens);
+    char *argv[argc+1];
+    for (int i = 0; i < argc; i++) {
+      argv[i] = tokens_get_token(tokens, i);
+    }
+    argv[argc] = NULL;
+
+    execvp(tokens_get_token(tokens,0), argv);
+
+    fprintf(stderr, "Error Ocuured While Executing Command\n");
+    exit(1);
+  }
+  wait(NULL);
   return 1;
 }
 
@@ -113,6 +188,7 @@ void init_shell() {
 
 int main(unused int argc, unused char *argv[]) {
   init_shell();
+  STDOUT=dup(1);
 
   static char line[4096];
   int line_num = 0;
@@ -125,12 +201,22 @@ int main(unused int argc, unused char *argv[]) {
     /* Split our line into words. */
     struct tokens *tokens = tokenize(line);
 
+    if(FDOUT!=NULL)
+    {
+      clearFP(FDOUT); // if anyprev out stream was open the close it
+      dup2(STDOUT,1); // redirect back to stdout
+    }
+    
+    set_token_stream(tokens); // set the token stream
+
     /* Find which built-in function to run. */
     int fundex = lookup(tokens_get_token(tokens, 0));
 
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
+
+      
       /* REPLACE this to run commands as programs. */
       fprintf(stdout, "This shell doesn't know how to run programs.\n");
     }
