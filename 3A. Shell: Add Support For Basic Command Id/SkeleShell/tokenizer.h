@@ -14,6 +14,3 @@ char *tokens_get_token(struct tokens *tokens, size_t n);
 
 /* Free the memory */
 void tokens_destroy(struct tokens *tokens);
-
-/* free n tokens from last of tokens*/
-void token_destroyn(struct tokens *tokens, int n);

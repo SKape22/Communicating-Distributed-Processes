@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdlib.h>
+#include<stdio.h>
 #include <string.h>
 #include "tokenizer.h"
 
@@ -127,23 +128,4 @@ void tokens_destroy(struct tokens *tokens) {
     free(tokens->tokens);
   }
   free(tokens);
-}
-
-void token_destroyn(struct tokens *tokens, int n)
-{
-  if(n>=tokens->tokens_length)
-  {
-    tokens_destroy(tokens);
-  }
-  else 
-  {
-    int l=tokens_get_length(tokens);
-    for(int i=l-1; i>l-n-1; i++)
-    {
-      free(tokens->tokens[i]);
-      free(tokens->buffers[i]);
-    }
-    tokens->tokens_length-=n;
-  }
-
 }

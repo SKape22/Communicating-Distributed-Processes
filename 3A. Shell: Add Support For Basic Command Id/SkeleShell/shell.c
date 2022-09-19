@@ -55,21 +55,32 @@ fun_desc_t cmd_table[] = {
   {cmd_id, "id", "shows the user id, arguments \n\t -u \n\t\tprint only the effective user ID \n\t -g \n\t\tprint only the effective group ID  \n\t -G \n\t\tprint all group IDs"}
 };
 
-void clearFP(FILE *fp)
+char **extract_argv(unused struct tokens* tokens)
 {
-  fclose(fp);
-  free(fp);
-  fp=NULL;
+    int argc = tokens_get_length(tokens);
+    char **argv=(char **)malloc(sizeof(char *)*(argc+1));
+    int i=0;
+    for (i = 0; i < argc; i++) {
+      if(!strcmp(tokens_get_token(tokens,i),">")) break;
+      argv[i] = tokens_get_token(tokens, i);
+    }
+    while(i<=argc) argv[i++]=NULL;
+    return argv;
 }
 
 FILE* set_stream(char *fname, int target)
 {
+    //printf("File open started\n");
+
     FILE *fp=fopen(fname,"w");
+
     if(!fp) return NULL;
     int fno=fileno(fp);
+
     dup2(fno,target);
+
     return fp;
-}
+} //working fine tested ok
 
 void set_token_stream(unused struct tokens *tokens)
 {
@@ -83,14 +94,11 @@ void set_token_stream(unused struct tokens *tokens)
         printf("No output file specified!\n");
         return;
       }
-      char *fname=tokens_get_token(tokens,i);
-      
+      char *fname=tokens_get_token(tokens,++i);
+      //printf("%s\n",fname);
       FDOUT=set_stream(fname,STDOUT_FILENO);
       if(FDOUT==NULL) printf("Cannot Open file");
-      else
-      {
-        token_destroyn(tokens,2); //destroy last two tokens 
-      }
+      //printf("Processs shisfting done");
       return;
     }
   }
@@ -102,13 +110,7 @@ int cmd_id(unused struct tokens *tokens)
 
   if ((child_pid = fork()) == 0) {
 
-    int argc = tokens_get_length(tokens);
-    char *argv[argc+1];
-    for (int i = 0; i < argc; i++) {
-      argv[i] = tokens_get_token(tokens, i);
-    }
-    argv[argc] = NULL;
-
+    char **argv=extract_argv(tokens);
     execvp("/usr/bin/id", argv);
 
     fprintf(stderr, "Error Ocuured While Executing Command\n");
@@ -124,13 +126,7 @@ int cmd_custom(unused struct tokens* tokens)
 
   if ((child_pid = fork()) == 0) {
 
-    int argc = tokens_get_length(tokens);
-    char *argv[argc+1];
-    for (int i = 0; i < argc; i++) {
-      argv[i] = tokens_get_token(tokens, i);
-    }
-    argv[argc] = NULL;
-
+    char **argv=extract_argv(tokens);
     execvp(tokens_get_token(tokens,0), argv);
 
     fprintf(stderr, "Error Ocuured While Executing Command\n");
@@ -200,12 +196,6 @@ int main(unused int argc, unused char *argv[]) {
   while (fgets(line, 4096, stdin)) {
     /* Split our line into words. */
     struct tokens *tokens = tokenize(line);
-
-    if(FDOUT!=NULL)
-    {
-      clearFP(FDOUT); // if anyprev out stream was open the close it
-      dup2(STDOUT,1); // redirect back to stdout
-    }
     
     set_token_stream(tokens); // set the token stream
 
@@ -216,9 +206,11 @@ int main(unused int argc, unused char *argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
 
-      
+      if(isValidProcess(tokens_get_token(tokens,0))<0)
       /* REPLACE this to run commands as programs. */
       fprintf(stdout, "This shell doesn't know how to run programs.\n");
+
+      else cmd_custom(tokens);
     }
 
     if (shell_is_interactive)
@@ -227,6 +219,9 @@ int main(unused int argc, unused char *argv[]) {
 
     /* Clean up memory */
     tokens_destroy(tokens);
+    dup2(STDOUT,1); // redirect back to stdout
+    if(FDOUT!=NULL) fclose(FDOUT);
+    FDOUT=NULL;
   }
 
   return 0;
