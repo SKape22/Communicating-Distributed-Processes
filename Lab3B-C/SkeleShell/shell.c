@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "tokenizer.h"
 
@@ -60,11 +61,26 @@ char **extract_argv(unused struct tokens* tokens)
     int argc = tokens_get_length(tokens);
     char **argv=(char **)malloc(sizeof(char *)*(argc+1));
     int i=0;
+    int offset=0;
     for (i = 0; i < argc; i++) {
-      if(!strcmp(tokens_get_token(tokens,i),">")) break;
-      argv[i] = tokens_get_token(tokens, i);
+      if(!strcmp(tokens_get_token(tokens,i),">"))
+      {
+        if(i<argc-1)
+        {
+          i++; offset+=2;
+        }
+        else 
+        {
+          i++;
+          offset++;
+        }
+      }
+      else
+      {
+        argv[i-offset] = tokens_get_token(tokens, i);
+      }
     }
-    while(i<=argc) argv[i++]=NULL;
+    argv[i-offset]=NULL;
     return argv;
 }
 
@@ -182,6 +198,13 @@ void init_shell() {
   }
 }
 
+void terminal_prefix(int line_num)
+{
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+    fprintf(stdout, "\033[0;32mpushkar@CDP\033[0;33m[%d]\033[0;34m%s\n: $ \033[0;37m", line_num,cwd);
+}
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
   STDOUT=dup(1);
@@ -191,8 +214,7 @@ int main(unused int argc, unused char *argv[]) {
 
   /* Please only print shell prompts when standard input is not a tty */
   if (shell_is_interactive)
-    fprintf(stdout, "%d: ", line_num);
-
+      terminal_prefix(line_num++);
   while (fgets(line, 4096, stdin)) {
     /* Split our line into words. */
     struct tokens *tokens = tokenize(line);
@@ -206,20 +228,20 @@ int main(unused int argc, unused char *argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
 
-      if(isValidProcess(tokens_get_token(tokens,0))<0)
-      /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      // if(isValidProcess(tokens_get_token(tokens,0))<0)
+      // /* REPLACE this to run commands as programs. */
+      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
 
-      else cmd_custom(tokens);
+      cmd_custom(tokens);
     }
+    dup2(STDOUT,1); // redirect back to stdout
 
     if (shell_is_interactive)
       /* Please only print shell prompts when standard input is not a tty */
-      fprintf(stdout, "%d: ", ++line_num);
+      terminal_prefix(line_num++);
 
     /* Clean up memory */
     tokens_destroy(tokens);
-    dup2(STDOUT,1); // redirect back to stdout
     if(FDOUT!=NULL) fclose(FDOUT);
     FDOUT=NULL;
   }
