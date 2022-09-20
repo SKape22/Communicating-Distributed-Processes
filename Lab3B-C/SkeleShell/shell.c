@@ -10,7 +10,8 @@
 #include <termios.h>
 #include <unistd.h>
 #include <limits.h>
-
+#include <grp.h>
+#include <pwd.h>
 #include "tokenizer.h"
 
 /* Convenience macro to silence compiler warnings about unused function parameters. */
@@ -31,10 +32,12 @@ pid_t shell_pgid;
 FILE *FDOUT=NULL;
 int STDOUT;
 
+static int line_num=0;
+
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_id(struct tokens *tokens);
-
+int cmd_reset(struct tokens *tokens);
 /* Built-in command functions take token array and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
 
@@ -53,7 +56,8 @@ int isValidProcess(char *processpath)
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
-  {cmd_id, "id", "shows the user id, arguments \n\t -u \n\t\tprint only the effective user ID \n\t -g \n\t\tprint only the effective group ID  \n\t -G \n\t\tprint all group IDs"}
+  {cmd_id, "id", "shows the user id, arguments \n\t -u \n\t\tprint only the effective user ID \n\t -g \n\t\tprint only the effective group ID  \n\t -G \n\t\tprint all group IDs"},
+  {cmd_reset, "reset", "clears output and resets history"}
 };
 
 char **extract_argv(unused struct tokens* tokens)
@@ -120,19 +124,74 @@ void set_token_stream(unused struct tokens *tokens)
   }
 }
 
+int cmd_reset(unused struct tokens* tokens)
+{
+  
+  system("clear");
+  line_num=0;
+  return 1;
+}
+
+void print_grps()
+{
+  struct passwd* user;
+    int nGroups = 20;
+    gid_t* groups;
+    groups = malloc(nGroups * sizeof(gid_t));
+    struct group* gr;
+    while(user = getpwent()){
+        nGroups = 20;
+        getgrouplist(user->pw_name, user->pw_gid, groups, &nGroups);
+        int i;
+        for(i = 0; i < nGroups; ++i){
+            gr = getgrgid(groups[i]);
+            if(gr){
+                printf("%s (%d)", gr->gr_name,gr->gr_gid);
+
+            }  
+        }
+        printf("\n");
+    }
+
+    free(groups);
+}
+
 int cmd_id(unused struct tokens *tokens)
 {
-  pid_t child_pid;
+  // pid_t child_pid;
 
-  if ((child_pid = fork()) == 0) {
+  // if ((child_pid = fork()) == 0) {
 
-    char **argv=extract_argv(tokens);
-    execvp("/usr/bin/id", argv);
+  //   char **argv=extract_argv(tokens);
+  //   execvp("/usr/bin/id", argv);
 
-    fprintf(stderr, "Error Ocuured While Executing Command\n");
-    exit(1);
-  }
-  wait(NULL);
+  //   fprintf(stderr, "Error Ocuured While Executing Command\n");
+  //   exit(1);
+  // }
+  // wait(NULL);
+
+  // gid_t gid;
+  // gid=getgid();
+  // struct group *g;
+  // g = getgrgid(gid);
+  // //getgr
+  // if(g!=NULL)
+  // for(int i=0; g->gr_mem[i]!=NULL; i++)
+  // {
+  //    printf("%s, ",g->gr_mem[i]);
+  // }
+  // while(*g->gr_mem)
+  // {
+  //   (g->gr_mem)++;
+  // }
+  print_grps();
+  // printf("%s gr_name\n",g->gr_name);
+  // printf("%s gr_passwd\n",g->gr_passwd);
+  // printf("%d g_gid\n",g->gr_gid);
+
+  // printf("%d getgid\n",getgid());
+  // printf("%d getuid\n",getuid());
+  // //free(g);
   return 1;
 }
 
@@ -210,7 +269,7 @@ int main(unused int argc, unused char *argv[]) {
   STDOUT=dup(1);
 
   static char line[4096];
-  int line_num = 0;
+  //static int line_num = 0;
 
   /* Please only print shell prompts when standard input is not a tty */
   if (shell_is_interactive)
