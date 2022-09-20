@@ -158,40 +158,18 @@ void print_grps()
 
 int cmd_id(unused struct tokens *tokens)
 {
-  // pid_t child_pid;
-
-  // if ((child_pid = fork()) == 0) {
-
-  //   char **argv=extract_argv(tokens);
-  //   execvp("/usr/bin/id", argv);
-
-  //   fprintf(stderr, "Error Ocuured While Executing Command\n");
-  //   exit(1);
-  // }
-  // wait(NULL);
-
-  // gid_t gid;
-  // gid=getgid();
-  // struct group *g;
-  // g = getgrgid(gid);
-  // //getgr
-  // if(g!=NULL)
-  // for(int i=0; g->gr_mem[i]!=NULL; i++)
-  // {
-  //    printf("%s, ",g->gr_mem[i]);
-  // }
-  // while(*g->gr_mem)
-  // {
-  //   (g->gr_mem)++;
-  // }
-  print_grps();
-  // printf("%s gr_name\n",g->gr_name);
-  // printf("%s gr_passwd\n",g->gr_passwd);
-  // printf("%d g_gid\n",g->gr_gid);
-
-  // printf("%d getgid\n",getgid());
-  // printf("%d getuid\n",getuid());
-  // //free(g);
+  if(tokens_get_length(tokens)==1)
+    print_grps();
+  else
+  {
+    if(!strcmp(tokens_get_token(tokens,1),"-g"))
+      printf("gid %d\n",getgid());
+    else if(!strcmp(tokens_get_token(tokens,1),"-G"))
+      printf("gid %d\n",getgid());
+      else if(!strcmp(tokens_get_token(tokens,1),"-u"))
+      printf("uid %d\n",getuid());
+  }
+  
   return 1;
 }
 
