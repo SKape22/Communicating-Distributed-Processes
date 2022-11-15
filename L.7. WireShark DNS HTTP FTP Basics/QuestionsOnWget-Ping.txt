@@ -1,0 +1,28 @@
+Understanding protocol overhead at different levels of TCP/IP stack
+Run "wget http://mirror.pramati.com/ubuntureleases/18.04.1/ubuntu-18.04.1-desktop-amd64.iso -O /dev/null" for 20s duration. Answer the following questions 
+1. What is /dev/null?
+
+2. What throughput range do you see when you run this experiment on your laptop? 
+
+3. Use Wondershaper (https://github.com/magnific0/wondershaper) to limit your network speed to 1 Mbps. What throughput do you see now?
+
+4. Run wireshark and compute the protocol overhead.
+a) In wireshark session, look at packets downloaded to your machine corresponding to the ubuntu iso file. What is the size of each packet?
+
+b) Compute the size of each header (Link layer, IP, and TCP). What is the protocol overhead i.e. the ratio of header bits to the actual data transmitted 
+
+
+Measure latency using ping
+Latency has 3 components, propagation delay, transmit delay and queueing delay.
+
+1) Write down the latencies for each case
+ping 127.0.0.1
+
+ping www.google.com
+
+ping www.iitmandi.ac.in
+
+
+2) what is the relative ordering among the latencies? Why? Which component of latency majorly affects the observed results?
+
+
