@@ -1,0 +1,55 @@
+A) Experiments using Traceroute
+sudo traceroute -I www.iitmandi.ac.in 64
+sudo traceroute -I www.iitmandi.ac.in 3000
+
+1. Select the first ICMP Echo Request message sent by your computer, and expand the Internet Protocol part of the packet in the packet details window. What is the IP address of your computer?
+
+2. Within the IP packet header, what is the value in the protocol field?
+
+3. How many bytes are in the IP header? 
+
+4. Which of the IP datagrams are fragmented? 
+
+5. Which fields in the IP datagram always change from one datagram to the next within this series of ICMP messages sent by your computer? 
+
+6. Which fields stay constant? Why? 
+
+7. What is the value in the Identification field and the TTL field?  Do these values remain unchanged for all of the ICMP TTL- exceeded replies sent to your computer by the nearest (first hop) router?  Why?
+
+B) Understanding exponential backoff of TCP
+On virtual machine
+-- Start a virtual machine with networking enabled in bridged mode
+-- Install xinetd in it
+-- Enable discard server in /etc/xinetd.d/discard set the disable = no for tcp version.
+-- Restart xinetd: sudo service xinetd restart
+-- Check status: sudo service xinetd status
+
+On your machine:
+Start wireshark and start telnet session in the terminal
+
+$telnet virtual_machine_IP discard
+Trying 10.8.19.24...
+Connected to 10.8.19.24.
+Escape character is '^]'.
+hello
+<<<<<<<<<<<<<<<<< make the ethernet interface down on the virtual machine >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+hi
+<<<<<<<<<<<<<<<<< notice the retransmission in wireshark, measure the time between each retransmission >>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<and verify exponential backoff, attach screenshot >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+use iperf to measure bandwidth between two computers connected to the same hotspot. Use tc to throttle the bandwidth. Send a large file and simultaneously send 100 pings, and measure the latency. Note down the observations.
+
+
+C) Understanding the effect of delay in ssh
+-- use tc to increase delay
+-- then ssh to another computer
+
+
+
+
+
+
+
+
+
+
