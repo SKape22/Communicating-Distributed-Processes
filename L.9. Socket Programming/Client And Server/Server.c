@@ -7,17 +7,34 @@
 #include <string.h>
 #define MAXREQ 20
 #define MAXQUEUE 5
+#define MAXOUT 20
+#define MAXIN 20
+
+#include"fileSrvUtil.c"
 
 void server(int consockfd) {
-  char reqbuf[MAXREQ];
-  int n;
-  while (1) {                   
-    memset(reqbuf,0, MAXREQ);
-    n = read(consockfd,reqbuf,MAXREQ-1); /* Recv */
-    printf("Recvd msg:%s\n", reqbuf);
-    if (n <= 0) return;
-    n = write(consockfd, reqbuf, strlen(reqbuf)); /* echo*/
-  }
+	int bytes_read;
+	char rcvbuf[MAXIN], cmd[MAXIN], arg[MAXIN], sndbuf[MAXOUT];
+
+	memset(rcvbuf, 0, MAXIN);
+	while ((bytes_read = read(consockfd, rcvbuf, MAXIN-1)) > 0) {
+		printf("Recvd msg: %s\n", rcvbuf);
+
+		sscanf(rcvbuf, "%s %s", cmd, arg);
+		if (strncmp(rcvbuf, "echo", 4) == 0) {
+			write(consockfd, arg, strlen(arg));
+		}
+		else if (strncmp(rcvbuf, "get", 3) == 0) {
+			if (sendfile(sndbuf, MAXOUT, consockfd, arg) == 0)
+				printf("Sent file: %s\n", arg);
+		}
+		else if (strncmp(rcvbuf, "put", 3) == 0) {
+			if (recvfile(rcvbuf, MAXIN, consockfd, arg) == 0)
+				printf("Recieved file: %s\n", arg);
+		}
+
+		memset(rcvbuf, 0, MAXIN);
+	}
 }
 
 int main() {
@@ -49,10 +66,15 @@ while (1) {
    consockfd = accept(lstnsockfd, (struct sockaddr *) &cli_addr,       
                       &clilen);
    printf("Accepted connection\n");
+  
+  int pid=fork();
+  if(!pid)
+   {
+    server(consockfd);
 
-   server(consockfd);
-
-   close(consockfd);
+    close(consockfd);
+   }
+  
   }
 close(lstnsockfd);
 }
